@@ -1,8 +1,9 @@
+// app/signup/page.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { collectSignals, CollectedSignals } from '../../lib/fingerprint';
+import { collectSignals, CollectedSignals } from '@/lib/fingerprint';
 
 type ApiResult = {
   decision: 'ALLOW' | 'CHALLENGE' | 'BLOCK';
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [result, setResult] = useState<ApiResult | null>(null);
   const [signals, setSignals] = useState<CollectedSignals | null>(null);
   const [error, setError] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,96 +60,147 @@ export default function SignupPage() {
   }
 
   async function handleReset() {
+    setResetting(true);
     await fetch('/api/reset', { method: 'POST' });
     setResult(null);
     setSignals(null);
     setEmail('');
+    setResetting(false);
   }
 
   return (
-    <main className="max-w-xl mx-auto px-6 py-16">
-      <Link href="/" className="text-slate-400 text-sm hover:text-slate-200">
-        &larr; back
-      </Link>
+    <main className="relative min-h-screen overflow-hidden">
+      <div className="fixed inset-0 bg-grid opacity-60" />
+      <div className="fixed inset-0 bg-vignette" />
+      <div className="orb w-[450px] h-[450px] bg-white/8 top-0 right-0 animate-driftSlow" />
 
-      <h1 className="text-3xl font-bold mt-6 mb-2">Start your free trial</h1>
-      <p className="text-slate-400 mb-8">
-        Signals are collected in your browser and evaluated server-side. Nothing here reads
-        cookies or localStorage &mdash; the identity is derived from device signals.
-      </p>
+      <div className="relative z-10 max-w-xl mx-auto px-6 py-16">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-white/40 text-sm hover:text-white/80 transition-colors animate-fadeIn"
+        >
+          &larr; back
+        </Link>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-slate-300 mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500"
-          />
+        <div className="mt-8 mb-8 animate-fadeInUp">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Start your free trial</h1>
+          <p className="text-white/45 text-sm leading-relaxed">
+            Signals are collected in your browser and evaluated server-side. No cookies
+            or localStorage are read &mdash; identity is derived purely from device signals.
+          </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-900 font-semibold py-2.5 rounded-lg transition"
+        <form
+          onSubmit={handleSubmit}
+          className="glass glass-ring rounded-2xl p-6 space-y-4 animate-scaleIn"
         >
-          {loading ? 'Checking device signals...' : 'Create account & start trial'}
-        </button>
-      </form>
-
-      {error && <p className="text-red-400 mt-4">{error}</p>}
-
-      {result && (
-        <div className="mt-8 border border-slate-800 rounded-xl p-5 bg-slate-900/60">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Server decision</h2>
-            <DecisionBadge decision={result.decision} />
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-white/40 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm outline-none placeholder:text-white/25 focus:border-white/30"
+            />
           </div>
 
-          <p className="text-sm text-slate-400 mb-3">
-            Risk score: <span className="font-mono text-slate-200">{result.score}/100</span>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {loading ? (
+              <>
+                <span className="spinner w-4 h-4" />
+                Checking device signals...
+              </>
+            ) : (
+              'Create account & start trial'
+            )}
+          </button>
+        </form>
+
+        {error && (
+          <p className="text-white/60 text-sm mt-4 animate-fadeIn">
+            <span className="text-white">Error:</span> {error}
           </p>
+        )}
 
-          <ul className="space-y-1.5 text-sm text-slate-300 list-disc list-inside">
-            {result.reasons.map((r, i) => (
-              <li key={i}>{r}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {result && (
+          <div className="glass glass-ring rounded-2xl p-6 mt-6 animate-scaleIn">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-sm text-white/70">Server decision</h2>
+              <DecisionBadge decision={result.decision} />
+            </div>
 
-      {signals && (
-        <details className="mt-6 text-sm text-slate-500">
-          <summary className="cursor-pointer hover:text-slate-300">
-            View raw collected signals (debug)
-          </summary>
-          <pre className="mt-2 bg-slate-900 p-4 rounded-lg overflow-x-auto text-xs">
-            {JSON.stringify(signals, null, 2)}
-          </pre>
-        </details>
-      )}
+            <div className="mb-5">
+              <div className="flex items-center justify-between text-xs text-white/40 mb-1.5">
+                <span>Risk score</span>
+                <span className="font-mono text-white/80">{result.score}/100</span>
+              </div>
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${result.score}%` }}
+                />
+              </div>
+            </div>
 
-      <button
-        onClick={handleReset}
-        className="mt-10 text-xs text-slate-500 hover:text-slate-300 underline"
-      >
-        Reset demo store (clears all recorded devices/emails)
-      </button>
+            <ul className="space-y-2">
+              {result.reasons.map((r, i) => (
+                <li
+                  key={i}
+                  className="text-sm text-white/60 leading-relaxed flex gap-2 animate-fadeIn"
+                  style={{ animationDelay: `${i * 0.08}s` }}
+                >
+                  <span className="text-white/30 mt-0.5">&bull;</span>
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {signals && (
+          <details className="mt-5 text-sm text-white/35 group">
+            <summary className="cursor-pointer hover:text-white/60 transition-colors list-none flex items-center gap-1.5">
+              <span className="group-open:rotate-90 transition-transform inline-block text-xs">
+                &rarr;
+              </span>
+              View raw collected signals
+            </summary>
+            <pre className="mt-3 glass rounded-xl p-4 overflow-x-auto text-xs font-mono text-white/50 animate-fadeIn">
+              {JSON.stringify(signals, null, 2)}
+            </pre>
+          </details>
+        )}
+
+        <button
+          onClick={handleReset}
+          disabled={resetting}
+          className="mt-10 text-xs text-white/30 hover:text-white/60 transition-colors underline underline-offset-4 disabled:opacity-50"
+        >
+          {resetting ? 'Resetting...' : 'Reset demo store'}
+        </button>
+      </div>
     </main>
   );
 }
 
 function DecisionBadge({ decision }: { decision: 'ALLOW' | 'CHALLENGE' | 'BLOCK' }) {
   const styles: Record<string, string> = {
-    ALLOW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-    CHALLENGE: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-    BLOCK: 'bg-red-500/20 text-red-400 border-red-500/40',
+    ALLOW: 'bg-white text-black',
+    CHALLENGE: 'bg-white/15 text-white border border-white/25',
+    BLOCK: 'bg-transparent text-white/80 border border-white/30',
   };
   return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${styles[decision]}`}>
+    <span
+      className={`text-xs font-semibold px-3 py-1 rounded-full tracking-wide ${styles[decision]}`}
+    >
       {decision}
     </span>
   );
