@@ -60,6 +60,20 @@ trial-guard-demo/
 
 ## 3. Setup
 
+**If you already have the project folder** (cloned from a repo, or the files
+are already placed in the structure above), setup is just two commands:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+**If you're building the folder from scratch** (no repo yet — placing
+individually generated files), create the structure and `package.json`
+first:
+
 ```bash
 mkdir trial-guard-demo && cd trial-guard-demo
 mkdir -p lib app/signup app/api/signup app/api/reset
@@ -70,15 +84,8 @@ npm install -D typescript@5.5.4 @types/node@20.14.10 @types/react@18.3.3 \
   @types/react-dom@18.3.0 tailwindcss@3.4.7 postcss@8.4.40 autoprefixer@10.4.19
 ```
 
-Place each generated file into the path shown in the structure above
-(overwrite the `package.json` npm created), then:
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
+Then drop each file into its path from the structure above (overwriting the
+`package.json` npm just created), and run `npm install && npm run dev` as above.
 
 ---
 
